@@ -1,39 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <script type="module">
-        import * as THREE from "/node_modules/three/build/three.module.js";
-        import { OrbitControls } from "/node_modules/three/examples/jsm/controls/OrbitControls.js";
-        import { GLTFLoader } from "/node_modules/three/examples/jsm/loaders/GLTFLoader.js";
-        import { RGBELoader } from "/node_modules/three/examples/jsm/loaders/RGBELoader.js";
-        import { RoughnessMipmapper } from '/node_modules/three/examples/jsm/utils/RoughnessMipmapper.js';
+      import * as THREE from "/node_modules/three/build/three.module.js";
+      import { OrbitControls } from "/node_modules/three/examples/jsm/controls/OrbitControls.js";
+      import { GLTFLoader } from "/node_modules/three/examples/jsm/loaders/GLTFLoader.js";
+      import { RGBELoader } from "/node_modules/three/examples/jsm/loaders/RGBELoader.js";
+      import { RoughnessMipmapper } from "/node_modules/three/examples/jsm/utils/RoughnessMipmapper.js";
 
-        var container, controls;
-        var camera, scene, renderer;
+      var container,
+        controls,
+        light,
+        theta = 0;
+      var camera, scene, renderer;
 
-        init();
-        render();
+      init();
+      animate();
 
-        function init() {
+      function init() {
         container = document.createElement("div");
         document.body.appendChild(container);
 
-        camera = new THREE.PerspectiveCamera(70,window.innerWidth / window.innerHeight,.1,20);
-        camera.position.set(1.8, 5, 9); //To move the camera
+        camera = new THREE.PerspectiveCamera(
+          70,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          50
+        );
+        // camera.position.set(1.8, 5, 9); //To move the camera
 
         scene = new THREE.Scene();
 
         new RGBELoader()
-            .setDataType(THREE.UnsignedByteType)
-            .setPath("resources/textures/")
-            .load("studio_small_04_1k.hdr", function (texture) {
+          .setDataType(THREE.UnsignedByteType)
+          .setPath("resources/textures/")
+          .load("studio_small_04_1k.hdr", function (texture) {
             var envMap = pmremGenerator.fromEquirectangular(texture).texture;
 
             scene.background = envMap;
@@ -43,23 +50,27 @@
             pmremGenerator.dispose();
 
             render();
-            
-            var roughnessMipmapper = new RoughnessMipmapper( renderer );
+
+            var light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 1, 1).normalize();
+            scene.add(light);
+
+            var roughnessMipmapper = new RoughnessMipmapper(renderer);
 
             var loader = new GLTFLoader().setPath(
-                "resources/model/elven_head/"
+              "resources/model/elven_head/"
             );
             loader.load("scene.gltf", function (gltf) {
-                gltf.scene.traverse( function ( child ) {
-                    if ( child.isMesh ) {
-                        roughnessMipmapper.generateMipmaps( child.material );
-                    }
-                });
-                scene.add(gltf.scene);
-                roughnessMipmapper.dispose();
-                render();
+              gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                  roughnessMipmapper.generateMipmaps(child.material);
+                }
+              });
+              scene.add(gltf.scene);
+              roughnessMipmapper.dispose();
+              render();
             });
-        });
+          });
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
@@ -69,30 +80,45 @@
         renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild(renderer.domElement);
 
-        var pmremGenerator = new THREE.PMREMGenerator( renderer );
-		pmremGenerator.compileEquirectangularShader();
+        var pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
 
-        controls = new OrbitControls( camera, renderer.domElement );
-        controls.addEventListener( 'change', render ); 
+        // to move camera using mouse
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.addEventListener("change", render);
         controls.minDistance = 5; //maximum how much I can zoom in
         controls.maxDistance = 10; //maximum how much I can zoom out also the initial position
-        controls.target.set( 0, 3, 2 ); //To set the initial position of the model
+        controls.target.set(0, 3, 2); //To set the initial position of the model
         controls.update();
 
-        window.addEventListener( 'resize', onWindowResize, false );
-        }
+        window.addEventListener("resize", onWindowResize, false);
+      }
 
-        function onWindowResize() {
+      function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
         render();
-        }
+      }
 
-        function render() {
+      function animate() {
+        requestAnimationFrame(animate);
+        render();
+      }
+
+      function render() {
+        // console.log(theta);
+
+        // if (theta < 10) {
+        theta += 0.01;
+        camera.position.x = Math.sin(theta) * 10;
+        camera.position.y = Math.sin(theta) * 10;
+        camera.position.z = Math.cos(theta) * 10;
+        camera.lookAt(scene.position);
+        // }
+
         renderer.render(scene, camera);
-        }
+      }
     </script>
-</body>
-
+  </body>
 </html>
