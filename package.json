@@ -1,0 +1,26 @@
+{
+  "name": "coron_simulation-",
+  "version": "1.0.0",
+  "description": "1. In the parent directory 'Coron_simulator' run 'npm install' otherwise run 'npm install three'\r 2. Run live server from your editor to view the webpage",
+  "main": "app.js",
+  "dependencies": {
+    "three": "^0.115.0"
+  },
+  "devDependencies": {
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  },
+  "scripts": {
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anupm12/coron_simulation-.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anupm12/coron_simulation-/issues"
+  },
+  "homepage": "https://github.com/anupm12/coron_simulation-#readme"
+}
