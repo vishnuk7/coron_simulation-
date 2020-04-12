@@ -1,6 +1,7 @@
-## low fidelity sketch
+## Setup
 
-![corona](./screenshot/corona.png)
+1. In the parent directory 'Coron_simulator' run 'npm install' otherwise run 'npm install three'
+2. Run live server from your editor to view the webpage
 
 ## references
 
