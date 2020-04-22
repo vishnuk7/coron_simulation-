@@ -1,8 +1,5 @@
 import * as THREE from "./node_modules/three/build/three.module.js";
 import {
-    OrbitControls
-} from "./node_modules/three/examples/jsm/controls/OrbitControls.js";
-import {
     GLTFLoader
 } from "./node_modules/three/examples/jsm/loaders/GLTFLoader.js";
 import {
@@ -11,37 +8,52 @@ import {
 import {
     RoughnessMipmapper
 } from "./node_modules/three/examples/jsm/utils/RoughnessMipmapper.js";
+import {
+    OrbitControls
+} from "./node_modules/three/examples/jsm/controls/OrbitControls.js";
 
-var container,
-    controls,
-    light,
-    theta = 0,
-    model1,
-    distance = 0,
-    flag = 1;
-var camera, scene, renderer;
+var camera, scene, renderer, controls;
+var lungs, covid;
+let incrementValueCovid = 0.01;
+let incrementValueLungs = 0.02;
+let count = 1,
+    i = 0,
+    j = 0,
+    k = 0;
 
-init();
-animate();
-
-function init() {
-    container = document.createElement("div");
+const init = () => {
+    var container = document.createElement("div");
     document.body.appendChild(container);
 
     camera = new THREE.PerspectiveCamera(
-        100,
+        75,
         window.innerWidth / window.innerHeight,
         0.1,
         10000
     );
-    // camera.position.set(1.8, 5, 9); //To move the camera
+    camera.position.z = 10;
 
     scene = new THREE.Scene();
+    // scene.background = new THREE.Color("rgb(196, 185, 179)");
+    //   var bgTexture = new THREE.TextureLoader().load(
+    //     "./resources/textures/factory_wall_1k.png"
+    //   );
+    //   scene.background = bgTexture;
+
+    var light = new THREE.AmbientLight(0xffffff);
+    scene.add(light);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
 
     new RGBELoader()
         .setDataType(THREE.UnsignedByteType)
         .setPath("./resources/textures/")
-        .load("adams_place_bridge_1k.hdr", function (texture) {
+        .load("surgery_1k (1).hdr", function (texture) {
             var envMap = pmremGenerator.fromEquirectangular(texture).texture;
 
             scene.background = envMap;
@@ -50,92 +62,99 @@ function init() {
             texture.dispose();
             pmremGenerator.dispose();
 
-            var light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(1, 1, 1).normalize();
-            scene.add(light);
-
             var roughnessMipmapper = new RoughnessMipmapper(renderer);
 
-            var loader = new GLTFLoader().setPath(
-                "./resources/model/coronavirus/"
-            );
+            let loader = new GLTFLoader().setPath("./resources/model/lungs/");
             loader.load("scene.gltf", function (gltf) {
-                model1 = gltf.scene;
+                lungs = gltf.scene;
                 gltf.scene.traverse(function (child) {
                     if (child.isMesh) {
                         roughnessMipmapper.generateMipmaps(child.material);
                     }
                 });
+                lungs.scale.set(0.6, 0.6, 0.6);
+                scene.add(gltf.scene);
+                roughnessMipmapper.dispose();
+            });
+
+            loader = new GLTFLoader().setPath("./resources/model/coronavirus/");
+            loader.load("scene.gltf", function (gltf) {
+                covid = gltf.scene;
+                gltf.scene.traverse(function (child) {
+                    if (child.isMesh) {
+                        roughnessMipmapper.generateMipmaps(child.material);
+                    }
+                });
+                covid.scale.set(0.01, 0.01, 0.01);
+                covid.translateZ(1.5);
+                covid.translateY(5);
+                covid.translateX(5);
                 scene.add(gltf.scene);
                 roughnessMipmapper.dispose();
             });
         });
 
-    renderer = new THREE.WebGLRenderer({
-        antialias: true
-    });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.8;
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    container.appendChild(renderer.domElement);
-
-    var pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-
-    // to move camera using mouse
     controls = new OrbitControls(camera, renderer.domElement);
     controls.addEventListener("change", render);
     controls.minDistance = 2; //maximum how much I can zoom in
     controls.maxDistance = 10; //maximum how much I can zoom out also the initial position
-    controls.target.set(5, 1, 0); //To set the initial position of the model
     controls.update();
 
     window.addEventListener("resize", onWindowResize, false);
-}
+};
 
-function onWindowResize() {
+const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    render();
-}
+};
 
-function animate() {
+const animate = () => {
     requestAnimationFrame(animate);
-    render();
-}
-
-function render() {
-    theta += 0.005;
-    if (theta < 5.9) {
-        camera.position.x = Math.sin(theta) * 70;
-        // camera.position.y = Math.sin(theta) * 70;
-        camera.position.z = Math.cos(theta) * 70;
-        camera.lookAt(scene.position);
-    }
-    if (theta > 5.9 && distance < 1.5) {
-        distance += 0.01;
-        model1.translateX(distance + 0.5);
-        model1.translateZ(-distance);
-    }
-    if (distance >= 1.5 && flag == 1) {
-        flag = 0;
-        secondModel();
-    }
-    renderer.render(scene, camera);
-}
-
-function secondModel() {
-    var loader = new GLTFLoader().setPath("resources/model/elven_head/");
-    loader.load("scene.gltf", function (gltf) {
-        scene.add(gltf.scene);
-    });
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 4; //maximum how much I can zoom in
-    controls.maxDistance = 10; //maximum how much I can zoom out
-    controls.target.set(6, 5, 2);
     controls.update();
-}
+    render();
+    setTimeout(() => {
+        if (incrementValueCovid < 0.015) {
+            incrementValueCovid += 0.0001;
+            covid.scale.x = incrementValueCovid;
+            covid.scale.y = incrementValueCovid;
+            covid.scale.z = incrementValueCovid;
+
+            console.log(`${count++} covid: ${incrementValueCovid}`);
+        }
+        if (incrementValueLungs < 1.5) {
+            incrementValueLungs += 0.014653465346534653;
+            lungs.scale.x = incrementValueLungs;
+            lungs.scale.y = incrementValueLungs;
+            lungs.scale.z = incrementValueLungs;
+
+            console.log(`${count++} lungs: ${incrementValueLungs}`);
+        }
+        if (i <= 1.12 && incrementValueLungs >= 1.5) {
+            if (i <= 0.0513) {
+                i += 0.00025;
+                covid.translateX(-i);
+            }
+        }
+        if (i >= 0.0513) {
+            if (j <= 0.05) {
+                j += 0.00025;
+                covid.translateY(-j);
+            }
+        }
+        if (j >= 0.05) {
+            if (k < 0.04) {
+                k += 0.00025;
+                covid.translateX(-k);
+                covid.translateY(-k);
+            }
+        }
+    }, 4000);
+};
+
+const render = () => {
+    renderer.render(scene, camera);
+};
+
+init();
+animate();
