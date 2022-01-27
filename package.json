@@ -4,7 +4,7 @@
   "description": "1. In the parent directory 'Coron_simulator' run 'npm install' otherwise run 'npm install three'\r 2. Run live server from your editor to view the webpage",
   "main": "app.js",
   "dependencies": {
-    "three": "^0.115.0"
+    "three": "^0.137.0"
   },
   "devDependencies": {
     "webpack": "^4.42.1",
